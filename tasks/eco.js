@@ -1,13 +1,15 @@
 /*
  * grunt-eco
- * https://github.com/gr2m/grunt-eco
+ * https://github.com/AVVSDevelopment/grunt-eco
  *
  * Copyright (c) 2012 Gregor Martynus
+ * Copyright (c) 2013 Vitaly Aminev
  * Licensed under the MIT license.
  */
 
 module.exports = function(grunt) {
   var path = require('path');
+  var _ = grunt.util._;
 
 
   // Please see the grunt documentation for more information regarding task and
@@ -22,71 +24,79 @@ module.exports = function(grunt) {
 
     var helpers = require('grunt-lib-contrib').init(grunt);
 
+    var options = this.options({
+      bare: false,
+      separator: grunt.util.linefeed,
+      namespace: "JST"      
+    });
+    
+    grunt.verbose.writeflags(options, 'Options');
 
     var basePath;
     var srcFiles;
     var newFileDest;
 
     this.files.forEach(function (file) {
-      file.dest = path.normalize(file.dest);
-      srcFiles = grunt.file.expand(file.src);
-
-      basePath = helpers.findBasePath(srcFiles, file.basePath);
-
-      console.log("basePath")
-      console.log(basePath)
-
-      srcFiles.forEach(function (srcFile) {
-        newFileDest = helpers.buildIndividualDest(file.dest, srcFile, basePath);
-        compile(srcFile, newFileDest, basePath);
-      })
-    })
-  })
-
-  var compile = function(src, destPath, basePath) {
-    var eco = require('eco'),
-        js = '';
-
-
-    options = grunt.config('eco.app');
-    extension = typeof extension === "undefined" ? '.js' : extension;
-
-    var dirname = path.dirname(src);
-    var basename = path.basename(src, '.eco'),
-        dest = destPath + extension;
-    var JSTpath
-
-    // De-dup dest if we have .js.js - see issue #16
-    if (dest.match(/\.js\.js/)) {
-      dest = dest.replace(/\.js\.js/, ".js");
+      var validFiles = removeInvalidFiles(file);      
+      writeFile(file.dest, concatOutput(validFiles, options));            
+    });
+    
+  });
+  
+  
+  var removeInvalidFiles = function(files) {
+    return files.src.filter(function(filepath) {
+      if (!grunt.file.exists(filepath)) {
+        grunt.log.warn('Source file "' + filepath + '" not found.');
+        return false;
+      } else {
+        return true;
+      }
+    });
+  };
+  
+  var writeFile = function (path, output) {
+    if (output.length < 1) {
+      warnOnEmptyFile(path);
+    } else {
+      grunt.file.write(path, output);
+      grunt.log.writeln('File ' + path + ' created.');
     }
-
-    if (path.extname(src) === '.js') {
-      grunt.file.copy(src, dest);
-      return true;
+  };
+  
+  var warnOnEmptyFile = function (path) {
+    grunt.log.warn('Destination (' + path + ') not written because compiled files were empty.');
+  };
+  
+  var concatOutput = function(files, options) {
+    files = files.map(function(filepath) {
+      var code = grunt.file.read(filepath);
+      return compileEco(code, options, filepath);
+    }).join(grunt.util.normalizelf(options.separator));
+    
+    if (!options.bare) {
+      //code for wrapping
+      var wrapBefore = "(function() {\nthis."+options.namespace+" || (this."+options.namespace+" = {});\n";
+      var wrapAfter  = "}).call(this);\nif ((typeof exports !== \"undefined\" && exports !== null) && exports){exports."+options.namespace+" = this."+options.namespace+";}";
+      files = wrapBefore + files + wrapAfter;
     }
-
-    if( options.bare !== false ) {
-      options.bare = true;
-    }
+    
+    return files;
+  };
+  
+  var compileEco = function(code, options, filepath) { //src, destPath, basePath 
+    options = _.clone(options);
+    options = _.extend(grunt.config('eco.app'), options); 
+    
+    var basename = path.basename(filepath, ".eco");
 
     try {
-      js = eco.compile(grunt.file.read(src));
-
-      JSTpath = dirname + '/' + basename
-      JSTpath = JSTpath.replace(basePath, '').substr(1)
-      JSTpath = JSTpath.replace(/views\//, '')
-
-      console.log('compiling %s', JSTpath)
-      js = js.replace(/module\.exports/, "if (! window.JST) { window.JST = {}}; window.JST['"+JSTpath+"']")
-
-      grunt.file.write(dest, js);
-      return true;
+      return require('eco').compile(code, options).replace(/module\.exports/, "this."+options.namespace+"['"+basename+"']");
     } catch (e) {
-      grunt.log.error("Error in " + src + ":\n" + e);
-      return false;
+      console.error(e);
+      grunt.fail.warn('EcoTemplates failed to compile.');
     }
   };
 
 
-}
+};
