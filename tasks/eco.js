@@ -91,7 +91,7 @@ module.exports = function(grunt) {
     var basename = path.basename(filepath, ".eco");
 
     try {
-      return require('eco').precompile(code, options).replace(/module\.exports/, "this."+options.namespace+"['"+basename+"']");
+      return "this."+options.namespace+"['"+basename+"'] = " + require('eco').precompile(code, options);
     } catch (e) {
       console.error(e);
       grunt.fail.warn('EcoTemplates failed to compile.');
