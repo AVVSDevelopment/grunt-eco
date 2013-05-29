@@ -1,7 +1,7 @@
 {
   "name": "grunt-eco",
   "description": "JavaScripts your Embedded CoffeeScript Templates",
-  "version": "0.0.2",
+  "version": "0.1.1",
   "homepage": "https://github.com/gr2m/grunt-eco",
   "author": {
     "name": "Gregor Martynus",
@@ -63,13 +63,13 @@
     "node": "*"
   },
   "dependencies": {
-    "grunt": "~0.4.0",
-    "grunt-lib-contrib": "~0.3.0",
-    "eco": "~1.0.3"
+    "grunt-lib-contrib": "~0.3.1",
+    "eco": "~1.1.0-rc-3"
   },
   "devDependencies": {
-    "grunt": "~0.4.0",
-    "eco": "~1.0.3"
+    "grunt": "~0.4.1",
+    "grunt-release": "~0.3.3",
+    "grunt-contrib-jshint": "~0.5.4"
   },
   "keywords": [
     "gruntplugin"
