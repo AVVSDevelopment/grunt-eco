@@ -76,9 +76,10 @@ module.exports = function(grunt) {
     
     if (!options.bare) {
       //code for wrapping
-      var wrapBefore = "(function() {\nthis."+options.namespace+" || (this."+options.namespace+" = {});\n";
+      var wrapBefore = "(function() {\nthis."+options.namespace+" || (this."+options.namespace+" = {}); var self = this;\n";
       var wrapAfter  = "}).call(this);\nif ((typeof exports !== \"undefined\" && exports !== null) && exports){exports."+options.namespace+" = this."+options.namespace+";}";
-      files = wrapBefore + files + wrapAfter;
+         
+      files = wrapBefore + files.replace(/if \(\!__obj\) __obj = \{\};/g, 'if (!__obj) __obj = {}; __obj.'+options.namespace+' = self.'+options.namespace) + wrapAfter;
     }
     
     return files;
