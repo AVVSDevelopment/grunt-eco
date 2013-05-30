@@ -1,7 +1,7 @@
 {
   "name": "grunt-eco",
   "description": "JavaScripts your Embedded CoffeeScript Templates",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "homepage": "https://github.com/gr2m/grunt-eco",
   "author": {
     "name": "Gregor Martynus",
